@@ -1,0 +1,17 @@
+README.md
+pyproject.toml
+src/web_agent/__init__.py
+src/web_agent/agent.py
+src/web_agent/demo.py
+src/web_agent/state.py
+src/web_agent.egg-info/PKG-INFO
+src/web_agent.egg-info/SOURCES.txt
+src/web_agent.egg-info/dependency_links.txt
+src/web_agent.egg-info/requires.txt
+src/web_agent.egg-info/top_level.txt
+src/web_agent/tools/__init__.py
+src/web_agent/tools/bash_tool.py
+src/web_agent/tools/edit_tool.py
+src/web_agent/tools/sequential_thinking_tool.py
+src/web_agent/tools/task_done_tool.py
+tests/test_agent.py
