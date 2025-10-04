@@ -13,7 +13,7 @@ def edit_tool(
     text: Optional[str] = None,
     line_number: Optional[int] = None,
 ) -> str:
-    """File and directory manipulation tool with persistent state.
+    """File and directory manipulation tool.
 
     Operations:
     - view: Display file contents with line numbers, or list directory contents up to 2 levels deep
@@ -22,9 +22,17 @@ def edit_tool(
     - insert: Insert text after a specified line number
 
     Key features:
-    - Requires absolute paths (e.g., '/repo/file.py')
+    - Supports both absolute and relative paths
     - String replacements must match exactly, including whitespace
     - Supports line range viewing for large files
+
+    Args:
+        command: The operation to perform
+        path: File or directory path (can be relative or absolute)
+        old_str: String to replace (for str_replace)
+        new_str: Replacement string (for str_replace)
+        text: Text content (for create/insert)
+        line_number: Line number for insertion
     """
     try:
         path_obj = Path(path)
