@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trae-web"
+version = "0.1.0"
+description = "IDE Agent with trae-agent tools converted to LangGraph"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "copilotkit>=0.1.65",
+    "dotenv>=0.9.9",
+    "langgraph>=0.6.7",
+    "uvicorn>=0.37.0",
+    "langchain-core>=0.3.12",
+    "langchain-openai>=0.3.0",
+    "fastapi>=0.104.0",
+]
+
+# Use proper TOML table structure instead of inline tables
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["trae_web*"]
+exclude = []

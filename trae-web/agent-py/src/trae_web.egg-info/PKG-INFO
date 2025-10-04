@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: trae-web
+Version: 0.1.0
+Summary: IDE Agent with trae-agent tools converted to LangGraph
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: copilotkit>=0.1.65
+Requires-Dist: dotenv>=0.9.9
+Requires-Dist: langgraph>=0.6.7
+Requires-Dist: uvicorn>=0.37.0
+Requires-Dist: langchain-core>=0.3.12
+Requires-Dist: langchain-openai>=0.3.0
+Requires-Dist: fastapi>=0.104.0

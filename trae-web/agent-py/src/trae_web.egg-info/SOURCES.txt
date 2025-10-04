@@ -1,0 +1,16 @@
+README.md
+pyproject.toml
+src/trae-web/__init__.py
+src/trae-web/agent.py
+src/trae-web/demo.py
+src/trae-web/state.py
+src/trae-web/tools/__init__.py
+src/trae-web/tools/bash_tool.py
+src/trae-web/tools/edit_tool.py
+src/trae-web/tools/sequential_thinking_tool.py
+src/trae-web/tools/task_done_tool.py
+src/trae_web.egg-info/PKG-INFO
+src/trae_web.egg-info/SOURCES.txt
+src/trae_web.egg-info/dependency_links.txt
+src/trae_web.egg-info/requires.txt
+src/trae_web.egg-info/top_level.txt
