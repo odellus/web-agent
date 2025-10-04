@@ -30,7 +30,8 @@ async def llm_call(state: TraeWebState):
     # Add system prompt to messages
     messages = [HumanMessage(content=TRAE_AGENT_SYSTEM_PROMPT)] + state["messages"]
     response = await model_with_tools.ainvoke(messages)
-    return {"messages": [response]}
+    remaining_steps = state.get("remaining_steps", 0)
+    return {"messages": [response], "remaining_steps": remaining_steps - 1}
 
 
 async def reflection_node(state: TraeWebState):
@@ -68,11 +69,16 @@ def create_custom_agent():
     workflow.add_edge(START, "llm_call")
     workflow.add_edge("llm_call", "tool_node")
     workflow.add_edge("tool_node", "reflection_node")
-    workflow.add_edge("reflection_node", "llm_call")
+    # workflow.add_edge("reflection_node", "llm_call")
 
     # Add conditional edge to end when task is done
     def should_continue(state: TraeWebState):
         """Check if task_done was called or we should continue"""
+
+        remaining_steps = state.get("remaining_steps", 0)
+        if remaining_steps <= 0:
+            return END
+
         # Check all tool messages for task_done completion
         tool_messages = [
             msg
@@ -89,6 +95,7 @@ def create_custom_agent():
         last_message = state["messages"][-1] if state["messages"] else None
         if hasattr(last_message, "tool_calls"):
             for tool_call in last_message.tool_calls:
+                print(tool_call["name"])
                 if tool_call["name"] == "task_done":
                     print(f"DEBUG: Found task_done tool call, ending workflow")
                     return END
@@ -112,9 +119,11 @@ async def test_custom_agent():
     config = {"configurable": {"thread_id": "custom-test-123"}, "recursion_limit": 50}
     initial_state = {
         "messages": [
-            HumanMessage(content="Create a file called test.txt with 'hello world'")
+            HumanMessage(
+                content="Create a file called test.txt with 'hello world'. Then rename it. Then edit it to say goodbye world."
+            )
         ],
-        "remaining_steps": 10,
+        "remaining_steps": 50,
         "working_directory": Path(
             "/home/thomas/src/projects/copilotkit-work/test_workingdir"
         ),
@@ -125,11 +134,13 @@ async def test_custom_agent():
         async for chunk in agent.astream(
             initial_state, config=config, stream_mode="values"
         ):
-            print(f"CHUNK: {chunk}")
-            print("---")
+            print(f"REMAINING_STEPS: {chunk.get('remaining_steps')}")
+            print(f"LAST_MESSAGE: {chunk.get('messages', [''])[-1]}")
+            # print("---")
+            pass
 
         final_state = await agent.aget_state(config=config)
-        print(f"FINAL STATE: {final_state}")
+        # print(f"FINAL STATE: {final_state}")
     except Exception as e:
         print(f"Error during streaming: {e}")
 
