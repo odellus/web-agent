@@ -1,5 +1,5 @@
 Metadata-Version: 2.4
-Name: trae-web
+Name: web-agent
 Version: 0.1.0
 Summary: IDE Agent with trae-agent tools converted to LangGraph
 Requires-Python: >=3.12

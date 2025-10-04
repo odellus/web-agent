@@ -1,1 +1,0 @@
-I told my computer I had a problem, it said, 'Click Yes to continue.'

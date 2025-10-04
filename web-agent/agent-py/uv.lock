@@ -1054,33 +1054,6 @@ wheels = [
 ]
 
 [[package]]
-name = "trae-web"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "copilotkit" },
-    { name = "dotenv" },
-    { name = "fastapi" },
-    { name = "ipython" },
-    { name = "langchain-core" },
-    { name = "langchain-openai" },
-    { name = "langgraph" },
-    { name = "uvicorn" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "copilotkit", specifier = ">=0.1.65" },
-    { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "fastapi", specifier = ">=0.104.0" },
-    { name = "ipython", specifier = ">=9.6.0" },
-    { name = "langchain-core", specifier = ">=0.3.12" },
-    { name = "langchain-openai", specifier = ">=0.3.0" },
-    { name = "langgraph", specifier = ">=0.6.7" },
-    { name = "uvicorn", specifier = ">=0.37.0" },
-]
-
-[[package]]
 name = "traitlets"
 version = "5.14.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1139,6 +1112,33 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/24/30/6b0809f4510673dc723187aeaf24c7f5459922d01e2f794277a3dfb90345/wcwidth-0.2.14.tar.gz", hash = "sha256:4d478375d31bc5395a3c55c40ccdf3354688364cd61c4f6adacaa9215d0b3605", size = 102293 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/af/b5/123f13c975e9f27ab9c0770f514345bd406d0e8d3b7a0723af9d43f710af/wcwidth-0.2.14-py2.py3-none-any.whl", hash = "sha256:a7bb560c8aee30f9957e5f9895805edd20602f2d7f720186dfd906e82b4982e1", size = 37286 },
+]
+
+[[package]]
+name = "web-agent"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "copilotkit" },
+    { name = "dotenv" },
+    { name = "fastapi" },
+    { name = "ipython" },
+    { name = "langchain-core" },
+    { name = "langchain-openai" },
+    { name = "langgraph" },
+    { name = "uvicorn" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "copilotkit", specifier = ">=0.1.65" },
+    { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "fastapi", specifier = ">=0.104.0" },
+    { name = "ipython", specifier = ">=9.6.0" },
+    { name = "langchain-core", specifier = ">=0.3.12" },
+    { name = "langchain-openai", specifier = ">=0.3.0" },
+    { name = "langgraph", specifier = ">=0.6.7" },
+    { name = "uvicorn", specifier = ">=0.37.0" },
 ]
 
 [[package]]
