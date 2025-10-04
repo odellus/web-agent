@@ -10,13 +10,11 @@ async def test_clean_streaming():
     agent = create_ide_agent()
 
     config = {"configurable": {"thread_id": "test-thread-123"}}
-
+    message = (
+        """run echo 'Hello, world' > hello_world.txt and verify it worked please"""
+    )
     initial_state = {
-        "messages": [
-            HumanMessage(
-                content="please create a file called HAHAHA.md and add a joke to it"
-            )
-        ],
+        "messages": [HumanMessage(content=message)],
         "remaining_steps": 5,
     }
 
@@ -27,6 +25,9 @@ async def test_clean_streaming():
         ):
             print(f"CHUNK: {chunk}")
             print("---")
+
+        s = await agent.aget_state(config=config)
+        print(f"STATE: {s}")
     except Exception as e:
         print(f"Error: {e}")
 

@@ -12,3 +12,4 @@ Requires-Dist: langchain-core>=0.3.12
 Requires-Dist: langchain-openai>=0.3.0
 Requires-Dist: fastapi>=0.104.0
 Requires-Dist: ipython>=9.6.0
+Requires-Dist: langchain-community>=0.3.30

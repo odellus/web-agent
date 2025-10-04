@@ -1,12 +1,19 @@
 # copilotkit-work/trae-web/agent-py/src/tools/bash_tool.py
 import subprocess
 import os
+from pydantic import DirectoryPath
 from typing import Optional
+from typing_extensions import Annotated
 from langchain_core.tools import tool
+from langgraph.prebuilt import InjectedState
 
 
 @tool
-def bash_tool(command: str, restart: bool = False) -> str:
+def bash_tool(
+    command: str,
+    working_directory: Annotated[DirectoryPath, InjectedState("working_directory")],
+    restart: bool = False,
+) -> str:
     """Execute shell commands synchronously.
 
     Features:
@@ -31,7 +38,7 @@ def bash_tool(command: str, restart: bool = False) -> str:
             capture_output=True,
             text=True,
             timeout=30,  # 30 second timeout
-            cwd=os.getcwd(),  # Use current working directory
+            cwd=str(working_directory),  # Use injected working directory
         )
 
         # Combine stdout and stderr

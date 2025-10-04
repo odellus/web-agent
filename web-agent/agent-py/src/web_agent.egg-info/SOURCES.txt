@@ -15,3 +15,5 @@ src/web_agent/tools/edit_tool.py
 src/web_agent/tools/sequential_thinking_tool.py
 src/web_agent/tools/task_done_tool.py
 tests/test_agent.py
+tests/test_wd_injection.py
+tests/test_working_directory.py
