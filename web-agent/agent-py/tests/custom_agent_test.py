@@ -7,6 +7,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from pydantic import DirectoryPath
 from web_agent.state import TraeWebState
 from web_agent.tools import all_tools
+from pathlib import Path
 
 # TRAE Agent system prompt (simplified for testing)
 TRAE_AGENT_SYSTEM_PROMPT = """You are an AI assistant that helps with software tasks.
@@ -114,7 +115,7 @@ async def test_custom_agent():
             HumanMessage(content="Create a file called test.txt with 'hello world'")
         ],
         "remaining_steps": 10,
-        "working_directory": DirectoryPath(
+        "working_directory": Path(
             "/home/thomas/src/projects/copilotkit-work/test_workingdir"
         ),
     }

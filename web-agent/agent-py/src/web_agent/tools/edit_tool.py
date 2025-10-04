@@ -1,7 +1,10 @@
 # copilotkit-work/trae-web/agent-py/src/tools/edit_tool.py
 from pathlib import Path
 from typing import Optional, Literal
+from typing_extensions import Annotated
 from langchain_core.tools import tool
+from langgraph.prebuilt import InjectedState
+from pydantic import DirectoryPath
 
 
 @tool
@@ -12,6 +15,9 @@ def edit_tool(
     new_str: Optional[str] = None,
     text: Optional[str] = None,
     line_number: Optional[int] = None,
+    working_directory: Annotated[
+        DirectoryPath, InjectedState("working_directory")
+    ] = None,
 ) -> str:
     """File and directory manipulation tool.
 
@@ -23,6 +29,7 @@ def edit_tool(
 
     Key features:
     - Supports both absolute and relative paths
+    - Relative paths are resolved relative to the working directory
     - String replacements must match exactly, including whitespace
     - Supports line range viewing for large files
 
@@ -35,7 +42,11 @@ def edit_tool(
         line_number: Line number for insertion
     """
     try:
-        path_obj = Path(path)
+        # Resolve path relative to working directory
+        if working_directory is not None:
+            path_obj = working_directory / path
+        else:
+            path_obj = Path(path)
 
         if command == "view":
             return _handle_view(path_obj)
