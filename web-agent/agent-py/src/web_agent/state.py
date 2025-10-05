@@ -1,10 +1,10 @@
-from typing import List, Optional, Dict, Any
-from pydantic import DirectoryPath
+from pydantic import DirectoryPath, BaseModel
 from langgraph.graph import MessagesState
+from copilotkit import CopilotKitState
 import os
 
 
-class TraeWebState(MessagesState):
+class WebAgentState(CopilotKitState):
     """State for IDE agent with working directory support."""
 
     working_directory: DirectoryPath

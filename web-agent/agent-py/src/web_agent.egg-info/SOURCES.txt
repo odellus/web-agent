@@ -1,7 +1,7 @@
-README.md
 pyproject.toml
 src/web_agent/__init__.py
 src/web_agent/agent.py
+src/web_agent/config.py
 src/web_agent/demo.py
 src/web_agent/state.py
 src/web_agent.egg-info/PKG-INFO

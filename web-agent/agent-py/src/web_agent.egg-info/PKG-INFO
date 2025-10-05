@@ -13,3 +13,7 @@ Requires-Dist: langchain-openai>=0.3.0
 Requires-Dist: fastapi>=0.104.0
 Requires-Dist: ipython>=9.6.0
 Requires-Dist: langchain-community>=0.3.30
+Requires-Dist: psycopg-binary>=3.2.10
+Requires-Dist: psycopg-pool>=3.2.6
+Requires-Dist: psycopg[pool]>=3.2.10
+Requires-Dist: langgraph-checkpoint-postgres>=2.0.24
