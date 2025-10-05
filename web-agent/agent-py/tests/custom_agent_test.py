@@ -7,6 +7,16 @@ from langgraph.checkpoint.memory import MemorySaver
 from pydantic import DirectoryPath
 from web_agent.agent import create_custom_agent
 from pathlib import Path
+from web_agent.config import settings
+from langfuse import Langfuse
+from langfuse.langchain import CallbackHandler
+
+langfuse = Langfuse(
+    public_key=settings.langfuse_public_key.get_secret_value(),
+    secret_key=settings.langfuse_secret_key.get_secret_value(),
+    host=settings.langfuse_host,
+)
+langfuse_handler = CallbackHandler()
 
 
 async def test_custom_agent():
@@ -14,7 +24,11 @@ async def test_custom_agent():
     checkpointer = MemorySaver()
     agent = create_custom_agent(checkpointer=checkpointer)
 
-    config = {"configurable": {"thread_id": "custom-test-123"}, "recursion_limit": 50}
+    config = {
+        "configurable": {"thread_id": "custom-test-123"},
+        "recursion_limit": 50,
+        "callbacks": [langfuse_handler],
+    }
     initial_state = {
         "messages": [
             HumanMessage(
