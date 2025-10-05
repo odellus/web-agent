@@ -13,11 +13,21 @@ from fastapi import FastAPI
 import uvicorn
 from copilotkit.integrations.fastapi import add_fastapi_endpoint
 from copilotkit import CopilotKitRemoteEndpoint, LangGraphAGUIAgent
+from langfuse import Langfuse
+from langfuse.langchain import CallbackHandler
 
 from web_agent.agent import create_custom_agent
 from web_agent.config import settings
 
 db_url = settings.postgres_dsn
+
+langfuse = Langfuse(
+    public_key=settings.langfuse_public_key.get_secret_value(),
+    secret_key=settings.langfuse_secret_key.get_secret_value(),
+    host=settings.langfuse_host,
+)
+
+langfuse_handler = CallbackHandler()
 
 
 @asynccontextmanager
@@ -37,13 +47,13 @@ async def lifespan(app: FastAPI):
                     config={
                         "configurable": {"thread_id": "custom-test-123"},
                         "recursion_limit": 200,
+                        "callbacks": [langfuse_handler],
                     },
                 ),
             ],
         )
 
         add_fastapi_endpoint(app, sdk, "/copilotkit")
-        yield
     yield
 
 

@@ -18,13 +18,9 @@ class Settings(BaseSettings):
     # --- secrets & endpoints you actually need --------------------
     postgres_password: SecretStr
     postgres_url: str = "localhost"
-    phoenix_api_key: SecretStr
-    phoenix_collector_endpoint: str = "http://host.docker.internal:4317"
-    # phoenix_collector_http_endpoint: str = "http://host.docker.internal:6006/v1/traces"
-    openai_base_url: str = "http://host.docker.internal:11434/v1"
-    openai_api_key: SecretStr
-    searxng_host: str = "http://host.docker.internal"
-    searxng_port: int = 8082
+    langfuse_secret_key: SecretStr
+    langfuse_public_key: SecretStr
+    langfuse_host: str
 
     # --- convenience ---------------------------------------------
     @property

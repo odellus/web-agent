@@ -87,7 +87,7 @@ async def llm_call(state: WebAgentState):
 async def reflection_node(state: WebAgentState):
     """Reflection node - analyzes tool results and provides guidance."""
     tool_messages = [msg for msg in state["messages"] if isinstance(msg, ToolMessage)]
-    print(tool_messages)
+    # print(tool_messages)
     # Nothing to reflect on, passing empty list to messages adds nothing to
     # the conversation history, so we can safely ignore it.
     if not tool_messages:
@@ -123,19 +123,19 @@ async def should_continue(state: WebAgentState):
     ]
 
     if tool_messages:
-        print(f"DEBUG: Found task_done completion, ending workflow")
+        # print(f"DEBUG: Found task_done completion, ending workflow")
         return END
 
     # Also check if the last message is an LLM call that includes task_done tool call
     last_message = state["messages"][-1] if state["messages"] else None
     if hasattr(last_message, "tool_calls"):
         for tool_call in last_message.tool_calls:
-            print(tool_call["name"])
+            # print(tool_call["name"])
             if tool_call["name"] == "task_done":
-                print(f"DEBUG: Found task_done tool call, ending workflow")
+                # print(f"DEBUG: Found task_done tool call, ending workflow")
                 return END
 
-    print(f"DEBUG: No task_done found, continuing to llm_call")
+    # print(f"DEBUG: No task_done found, continuing to llm_call")
     return "llm_call"
 
 
