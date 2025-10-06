@@ -1,0 +1,7 @@
+[project]
+name = "treesitter-backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["fastapi", "uvicorn[standard]", "tree-sitter", "tree-sitter-languages", "pytest", "httpx", "tree-sitter-python"]
