@@ -5,7 +5,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, SystemMessage
 from langgraph.checkpoint.memory import MemorySaver
 from pydantic import DirectoryPath
-from web_agent.agent import create_custom_agent, get_agent
+from web_agent.agent import get_agent
 from pathlib import Path
 from web_agent.config import settings
 from langfuse import Langfuse
@@ -19,10 +19,10 @@ langfuse = Langfuse(
 langfuse_handler = CallbackHandler()
 
 
-async def test_custom_agent():
+async def test_custom_agent(task):
     """Test the custom agent with reflection."""
     checkpointer = MemorySaver()
-    agent = create_custom_agent(checkpointer=checkpointer)
+    agent = get_agent(checkpointer=checkpointer)
 
     config = {
         "configurable": {"thread_id": "custom-test-124"},
@@ -30,12 +30,7 @@ async def test_custom_agent():
         "callbacks": [langfuse_handler],
     }
     initial_state = {
-        "messages": [
-            HumanMessage(
-                # content="Create a file called test.txt with 'hello world'. Then rename it. Then edit it to say goodbye world."
-                content="Use sequential thinking tool extensively and bash to review current working directory and create an TODO.md that describes the overall structure of the project and its purpose and what should be done next. Think carefully.."
-            )
-        ],
+        "messages": [HumanMessage(content=task)],
         "remaining_steps": 50,
         "working_directory": Path(
             "/home/thomas/src/projects/copilotkit-work/test_workingdir"
@@ -60,4 +55,5 @@ async def test_custom_agent():
 
 if __name__ == "__main__":
     print("Running custom agent test...")
-    asyncio.run(test_custom_agent())
+    task = """You must carefully view the source directory, paying special care to actually read files that are relevant and to create a synopsis of the project you are looking at in SYNOPSIS.md. If you do not use the sequential_thinking tool extensively, this will not work."""
+    asyncio.run(test_custom_agent(task))

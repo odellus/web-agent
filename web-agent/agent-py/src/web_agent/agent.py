@@ -13,7 +13,19 @@ from web_agent.state import WebAgentState
 
 from web_agent.tools import all_tools
 from pathlib import Path
-
+from pydantic import DirectoryPath, BaseModel
+from typing import Literal
+from langgraph.graph import StateGraph, START, END
+from langgraph.prebuilt import ToolNode
+from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
+from copilotkit import CopilotKitState
+from pathlib import Path
+import matplotlib.pyplot as plt
+from web_agent.state import WebAgentState
+from web_agent.tools import all_tools
+from web_agent.config import settings
+from langfuse import Langfuse
+from langfuse.langchain import CallbackHandler
 
 llm = ChatOpenAI(
     base_url="http://localhost:11434/v1",
@@ -25,8 +37,8 @@ llm = ChatOpenAI(
 
 model_with_tools = llm.bind_tools(all_tools)
 
-# TRAE Agent system prompt (simplified for testing)
-TRAE_AGENT_SYSTEM_PROMPT = """You are an expert AI software engineering agent.
+# Agent system prompt
+AGENT_SYSTEM_PROMPT = """You are an expert AI software engineering agent.
 
 File Path Rule: All tools that take a `file_path` as an argument require an **relative path**.
 
@@ -76,106 +88,57 @@ If you are sure the issue has been solved, you should call the `task_done` to fi
 """
 
 
-def get_agent(checkpointer):
-    return create_react_agent(
-        llm,
-        tools=all_tools,
-        prompt=TRAE_AGENT_SYSTEM_PROMPT,
-        state_schema=WebAgentState,
-        checkpointer=checkpointer,
-    )
+llm_with_tools = llm.bind_tools(all_tools)
 
 
-async def llm_call(state: WebAgentState):
-    """LLM call node - invokes the model with tools."""
-
-    # Add system prompt to messages
-    messages = [SystemMessage(content=TRAE_AGENT_SYSTEM_PROMPT)] + state["messages"]
-    response = await model_with_tools.ainvoke(messages)
-    remaining_steps = state.get("remaining_steps", 0)
-    return {"messages": [response], "remaining_steps": remaining_steps - 1}
-
-
-async def reflection_node(state: WebAgentState):
-    """Reflection node - analyzes tool results and provides guidance."""
-    tool_messages = [msg for msg in state["messages"] if isinstance(msg, ToolMessage)]
-    # print(tool_messages)
-    # Nothing to reflect on, passing empty list to messages adds nothing to
-    # the conversation history, so we can safely ignore it.
-    if not tool_messages:
-        return {"messages": []}
-
-    # Check if task_done was called - if so, no reflection needed
-    task_done_calls = [msg for msg in tool_messages if msg.name == "task_done"]
-    if task_done_calls:
-        return {"messages": []}
-
-    # Simple reflection logic - only reflect if there are actual tool results to analyze
-    last_tool_msg = tool_messages[-1]
-    if "Error" in last_tool_msg.content or "STDERR" in last_tool_msg.content:
-        reflection = last_tool_msg.content
-        return {"messages": [AIMessage(content=reflection)]}
-    else:
-        # For successful tool executions, no reflection needed - let LLM decide next steps
-        return {"messages": []}
+# Nodes
+def llm_call(state: WebAgentState):
+    """LLM decides whether to call a tool or not"""
+    sys_msg = SystemMessage(content=AGENT_SYSTEM_PROMPT)
+    resp = llm_with_tools.invoke([sys_msg] + state["messages"])
+    remaining_steps = state["remaining_steps"] - 1
+    return {
+        "messages": [resp],
+        "remaining_steps": remaining_steps,
+    }
 
 
-async def should_continue(state: WebAgentState):
-    """Check if task_done was called or we should continue"""
+# Conditional edge function to route to the tool node or end based upon whether the LLM made a tool call
+def should_continue(state: WebAgentState) -> Literal["tool_node", END, "llm_call"]:
+    """Decide if we should continue the loop or stop based upon whether the LLM made a tool call"""
 
-    remaining_steps = state.get("remaining_steps", 0)
-    if remaining_steps <= 0:
-        return END
-
-    # Check all tool messages for task_done completion
-    tool_messages = [
+    messages = state["messages"]
+    task_done_messages = [
         msg
-        for msg in state["messages"]
+        for msg in messages
         if isinstance(msg, ToolMessage) and getattr(msg, "name", None) == "task_done"
     ]
-
-    if tool_messages:
-        # print(f"DEBUG: Found task_done completion, ending workflow")
+    if task_done_messages:
         return END
 
-    # Also check if the last message is an LLM call that includes task_done tool call
-    last_message = state["messages"][-1] if state["messages"] else None
-    if hasattr(last_message, "tool_calls"):
-        for tool_call in last_message.tool_calls:
-            # print(tool_call["name"])
-            if tool_call["name"] == "task_done":
-                # print(f"DEBUG: Found task_done tool call, ending workflow")
-                return END
+    if state["remaining_steps"] <= 0:
+        return END
 
-    # print(f"DEBUG: No task_done found, continuing to llm_call")
+    last_message = messages[-1]
+    # If the LLM makes a tool call, then perform an action
+    if last_message.tool_calls:
+        return "tool_node"
+    # Otherwise, we keep it going because this is trae-agent style. we either have to run out of step or call task_done to quit.
     return "llm_call"
 
 
-def create_custom_agent(checkpointer):
-    """Create custom agent with reflection capabilities."""
-    workflow = StateGraph(WebAgentState)
+def get_agent(checkpointer):
+    """Build the agent workflow"""
+    agent_builder = StateGraph(WebAgentState)
 
     # Add nodes
-    workflow.add_node("llm_call", llm_call)
-    workflow.add_node(
-        "tool_node",
-        ToolNode(
-            tools=all_tools,
-        ),
+    agent_builder.add_node("llm_call", llm_call)
+    agent_builder.add_node("tool_node", ToolNode(tools=all_tools))
+
+    # Add edges to connect nodes
+    agent_builder.add_edge(START, "llm_call")
+    agent_builder.add_conditional_edges(
+        "llm_call", should_continue, ["llm_call", "tool_node", END]
     )
-    workflow.add_node("reflection_node", reflection_node)
-
-    # Define edges
-    workflow.add_edge(START, "llm_call")
-    workflow.add_edge("llm_call", "tool_node")
-    workflow.add_edge("tool_node", "reflection_node")
-    # workflow.add_edge("reflection_node", "llm_call")
-
-    # Add conditional edge to end when task is done
-
-    workflow.add_conditional_edges(
-        "reflection_node", should_continue, ["llm_call", END]
-    )
-
-    # Compile with memory
-    return workflow.compile(checkpointer=checkpointer)
+    agent_builder.add_edge("tool_node", "llm_call")
+    return agent_builder.compile(checkpointer=checkpointer)
