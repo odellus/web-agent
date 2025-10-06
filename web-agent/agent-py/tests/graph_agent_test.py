@@ -55,7 +55,7 @@ def llm_call(state: WebAgentState):
 
 
 # Conditional edge function to route to the tool node or end based upon whether the LLM made a tool call
-def should_continue(state: WebAgentState) -> Literal["tool_node", END]:
+def should_continue(state: WebAgentState) -> Literal["tool_node", END, "llm_call"]:
     """Decide if we should continue the loop or stop based upon whether the LLM made a tool call"""
 
     messages = state["messages"]
@@ -74,8 +74,8 @@ def should_continue(state: WebAgentState) -> Literal["tool_node", END]:
     # If the LLM makes a tool call, then perform an action
     if last_message.tool_calls:
         return "tool_node"
-    # Otherwise, we stop (reply to the user)
-    return END
+    # Otherwise, we keep it going because this is trae-agent style. we either have to run out of step or call task_done to quit.
+    return "llm_call"
 
 
 # Build workflow
@@ -87,7 +87,9 @@ agent_builder.add_node("tool_node", ToolNode(tools=all_tools))
 
 # Add edges to connect nodes
 agent_builder.add_edge(START, "llm_call")
-agent_builder.add_conditional_edges("llm_call", should_continue, ["tool_node", END])
+agent_builder.add_conditional_edges(
+    "llm_call", should_continue, ["llm_call", "tool_node", END]
+)
 agent_builder.add_edge("tool_node", "llm_call")
 
 # Compile the agent
