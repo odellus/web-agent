@@ -1,6 +1,8 @@
 import asyncio
+from typing import Annotated
 from langgraph.graph import StateGraph, START, END
-from langgraph.prebuilt import ToolNode
+from langgraph.graph.message import add_messages
+from langgraph.prebuilt import ToolNode, create_react_agent
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, SystemMessage
 from psycopg_pool import AsyncConnectionPool
@@ -19,14 +21,14 @@ llm = ChatOpenAI(
     model="qwen3:latest",
     temperature=0.1,
 )
+
+
 model_with_tools = llm.bind_tools(all_tools)
 
 # TRAE Agent system prompt (simplified for testing)
 TRAE_AGENT_SYSTEM_PROMPT = """You are an expert AI software engineering agent.
 
-File Path Rule: All tools that take a `file_path` as an argument require an **absolute path**. You MUST construct the full, absolute path by combining the `[Project root path]` provided in the user's message with the file's path inside the project.
-
-For example, if the project root is `/home/user/my_project` and you need to edit `src/main.py`, the correct `file_path` argument is `/home/user/my_project/src/main.py`. Do NOT use relative paths like `src/main.py`.
+File Path Rule: All tools that take a `file_path` as an argument require an **relative path**.
 
 Your primary goal is to resolve a given GitHub issue by navigating the provided codebase, identifying the root cause of the bug, implementing a robust fix, and ensuring your changes are safe and well-tested.
 
@@ -72,6 +74,16 @@ Follow these steps methodically:
 
 If you are sure the issue has been solved, you should call the `task_done` to finish the task.
 """
+
+
+def get_agent(checkpointer):
+    return create_react_agent(
+        llm,
+        tools=all_tools,
+        prompt=TRAE_AGENT_SYSTEM_PROMPT,
+        state_schema=WebAgentState,
+        checkpointer=checkpointer,
+    )
 
 
 async def llm_call(state: WebAgentState):

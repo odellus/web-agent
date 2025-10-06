@@ -5,7 +5,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, SystemMessage
 from langgraph.checkpoint.memory import MemorySaver
 from pydantic import DirectoryPath
-from web_agent.agent import create_custom_agent
+from web_agent.agent import create_custom_agent, get_agent
 from pathlib import Path
 from web_agent.config import settings
 from langfuse import Langfuse
@@ -25,7 +25,7 @@ async def test_custom_agent():
     agent = create_custom_agent(checkpointer=checkpointer)
 
     config = {
-        "configurable": {"thread_id": "custom-test-123"},
+        "configurable": {"thread_id": "custom-test-124"},
         "recursion_limit": 50,
         "callbacks": [langfuse_handler],
     }
@@ -33,7 +33,7 @@ async def test_custom_agent():
         "messages": [
             HumanMessage(
                 # content="Create a file called test.txt with 'hello world'. Then rename it. Then edit it to say goodbye world."
-                content="Use sequential thinking tool extensively and bash to review current working directory and create an AGENTS.md that describes the overall structure of the project and its purpose."
+                content="Use sequential thinking tool extensively and bash to review current working directory and create an TODO.md that describes the overall structure of the project and its purpose and what should be done next. Think carefully.."
             )
         ],
         "remaining_steps": 50,

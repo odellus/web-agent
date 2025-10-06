@@ -28,14 +28,14 @@ def edit_tool(
     - insert: Insert text after a specified line number
 
     Key features:
-    - Supports both absolute and relative paths
+    - Supports relative paths (absolute paths are likely to cause issues)
     - Relative paths are resolved relative to the working directory
     - String replacements must match exactly, including whitespace
     - Supports line range viewing for large files
 
     Args:
         command: The operation to perform
-        path: File or directory path (can be relative or absolute)
+        path: File or directory path (should be relative)
         old_str: String to replace (for str_replace)
         new_str: Replacement string (for str_replace)
         text: Text content (for create/insert)

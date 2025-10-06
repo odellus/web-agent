@@ -5,6 +5,7 @@ import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.prebuilt import create_react_agent
 from psycopg_pool import AsyncConnectionPool
 
 load_dotenv()
@@ -13,21 +14,23 @@ from fastapi import FastAPI
 import uvicorn
 from copilotkit.integrations.fastapi import add_fastapi_endpoint
 from copilotkit import CopilotKitRemoteEndpoint, LangGraphAGUIAgent
+
+from web_agent.agent import create_custom_agent, get_agent
+from web_agent.tools import all_tools
+from web_agent.state import WebAgentState
+
+from web_agent.config import settings
 from langfuse import Langfuse
 from langfuse.langchain import CallbackHandler
-
-from web_agent.agent import create_custom_agent
-from web_agent.config import settings
-
-db_url = settings.postgres_dsn
 
 langfuse = Langfuse(
     public_key=settings.langfuse_public_key.get_secret_value(),
     secret_key=settings.langfuse_secret_key.get_secret_value(),
     host=settings.langfuse_host,
 )
-
 langfuse_handler = CallbackHandler()
+
+db_url = settings.postgres_dsn
 
 
 @asynccontextmanager
@@ -36,7 +39,7 @@ async def lifespan(app: FastAPI):
         db_url, open=False, kwargs=dict(autocommit=True)
     ) as pool:
         checkpointer = AsyncPostgresSaver(pool)
-        graph = create_custom_agent(checkpointer)
+        graph = get_agent(checkpointer)
 
         sdk = CopilotKitRemoteEndpoint(
             agents=[
