@@ -3,3 +3,5 @@ postgres
 .env
 src/web_agent.egg-info
 src/web_agent/__pycache__
+src/web_agent/*/__pycache__
+tests/__pycache__

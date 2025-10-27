@@ -1,0 +1,146 @@
+{
+  "name": "web-agent-ACP",
+  "version": "0.1.0",
+  "description": "Agent Client Protocol server for web-agent integration with Zed editor",
+  "protocol": {
+    "version": "0.4.0",
+    "transport": ["stdio", "websocket"],
+    "encoding": "ndjson"
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8095,
+    "websocket_path": "/ws",
+    "health_path": "/health"
+  },
+  "capabilities": {
+    "prompt": {
+      "image": false,
+      "embedded_context": true
+    },
+    "fs": {
+      "read_text_file": true,
+      "write_text_file": true,
+      "list_directory": false,
+      "create_directory": false,
+      "delete_file": false
+    },
+    "terminal": {
+      "create": true,
+      "resize": true,
+      "send_input": true,
+      "read_output": true
+    }
+  },
+  "agent": {
+    "default_model": "qwen3:latest",
+    "available_models": [
+      "qwen3:latest",
+      "gpt-4",
+      "gpt-3.5-turbo",
+      "claude-3-sonnet",
+      "claude-3-haiku"
+    ],
+    "default_mode": "execute",
+    "available_modes": ["execute", "plan", "safe"],
+    "max_steps": 50,
+    "session_timeout": 3600,
+    "max_sessions": 100
+  },
+  "tools": {
+    "bash_tool": {
+      "name": "bash",
+      "description": "Execute shell commands with working directory support",
+      "parameters": {
+        "command": {
+          "type": "string",
+          "description": "The bash command to execute",
+          "required": true
+        },
+        "working_directory": {
+          "type": "string",
+          "description": "Working directory for command execution",
+          "required": false
+        }
+      }
+    },
+    "edit_tool": {
+      "name": "str_replace_based_edit_tool",
+      "description": "Advanced file operations (view, create, str_replace, insert)",
+      "parameters": {
+        "file_path": {
+          "type": "string",
+          "description": "Path to the file to edit",
+          "required": true
+        },
+        "operation": {
+          "type": "string",
+          "enum": ["view", "create", "str_replace", "insert"],
+          "description": "Operation to perform",
+          "required": true
+        }
+      }
+    },
+    "sequential_thinking_tool": {
+      "name": "sequentialthinking",
+      "description": "Structured problem decomposition and step-by-step reasoning",
+      "parameters": {
+        "thought": {
+          "type": "string",
+          "description": "Current thought in the reasoning process",
+          "required": true
+        },
+        "total_thoughts": {
+          "type": "integer",
+          "description": "Total number of thoughts anticipated",
+          "required": true
+        },
+        "current_thought_index": {
+          "type": "integer",
+          "description": "Current thought index (1-based)",
+          "required": true
+        }
+      }
+    },
+    "task_done_tool": {
+      "name": "task_done",
+      "description": "Signal task completion with verification requirements",
+      "parameters": {
+        "verification_required": {
+          "type": "boolean",
+          "description": "Whether verification is required",
+          "required": false,
+          "default": false
+        },
+        "summary": {
+          "type": "string",
+          "description": "Summary of completed work",
+          "required": false
+        }
+      }
+    }
+  },
+  "zed_integration": {
+    "command": ["python", "-m", "web_agent.ACP"],
+    "args": ["--transport", "stdio", "--working-dir", "{workspace}"],
+    "transport": "stdio",
+    "capabilities": {
+      "fs": {
+        "readTextFile": true,
+        "writeTextFile": true
+      },
+      "terminal": true
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "handlers": ["console"]
+  },
+  "development": {
+    "debug": false,
+    "trace_requests": false,
+    "enable_cors": true,
+    "cors_origins": ["*"]
+  }
+}

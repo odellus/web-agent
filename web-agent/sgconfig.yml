@@ -1,0 +1,4 @@
+ruleDirs:
+- /home/thomas/src/projects/copilotkit-work/web-agent/rules
+utilDirs:
+- /home/thomas/src/projects/copilotkit-work/web-agent/utils

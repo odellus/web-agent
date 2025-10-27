@@ -24,6 +24,8 @@ dependencies = [
     "langgraph-checkpoint-postgres>=2.0.24",
     "langfuse>=3.6.1",
     "matplotlib>=3.10.6",
+    "websockets>=12.0",
+    "jsonrpcserver>=5.0.9",
 ]
 
 # Use proper TOML table structure instead of inline tables

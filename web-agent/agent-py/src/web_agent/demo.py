@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """FastAPI service for IDE agent with CopilotKit integration."""
 
 import os

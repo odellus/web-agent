@@ -25,7 +25,7 @@ web-agent/
 
 ```bash
 cd web-agent/agent-py
-source .venv/bin/activate
+. .venv/bin/activate
 uv run <command>
 ```
 
