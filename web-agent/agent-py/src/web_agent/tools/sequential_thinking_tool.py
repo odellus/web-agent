@@ -1,65 +1,134 @@
-# copilotkit-work/trae-web/agent-py/src/tools/sequential_thinking_tool.py
+# copilotkit-work/web-agent/agent-py/src/web_agent/tools/sequential_thinking_tool.py
+from typing import Optional, Dict, Any
 from langchain_core.tools import tool
-from typing import Optional
+from pydantic import BaseModel, Field
+from pathlib import Path
+
+from .thinking_agent import run_thinking_agent, ThinkingAgentState
+
+
+class ThinkingInput(BaseModel):
+    """Input model for the sequential thinking tool."""
+
+    problem_description: str = Field(
+        ..., description="Detailed description of the problem to analyze"
+    )
+    context: Optional[str] = Field(
+        None, description="Additional context for the problem"
+    )
+    max_thoughts: int = Field(
+        15, description="Maximum number of thinking steps to take"
+    )
+    thinking_approach: Optional[str] = Field(
+        None, description="Specific approach for thinking (optional)"
+    )
+    working_directory: Optional[str] = Field(
+        None, description="Working directory for file operations"
+    )
 
 
 @tool
 def sequential_thinking_tool(
-    thought: str,
-    thought_number: int,
-    total_thoughts: int,
-    next_thought_needed: bool,
-    is_revision: Optional[bool] = None,
-    revises_thought: Optional[int] = None,
-    branch_from_thought: Optional[int] = None,
-    branch_id: Optional[str] = None,
+    problem_description: str,
+    context: Optional[str] = None,
+    max_thoughts: int = 15,
+    thinking_approach: Optional[str] = None,
+    working_directory: Optional[str] = None,
 ) -> str:
-    """A detailed tool for dynamic and reflective problem-solving through thoughts.
+    """Enhanced sequential thinking tool that uses a reasoning subagent.
 
-    This tool helps analyze problems through a flexible thinking process that can adapt and evolve.
-    Each thought can build on, question, or revise previous insights as understanding deepens.
+    This tool provides sophisticated problem analysis through a dedicated thinking subagent
+    with capabilities for structured reasoning, web research, file analysis, and code search.
+
+    The thinking subagent includes:
+    - Structured thinking tool for step-by-step analysis
+    - Web search tool for external research and current information
+    - File reading tool for examining existing code and documentation
+    - Ripgrep tool for searching through code files
 
     When to use this tool:
-    - Breaking down complex problems into steps
-    - Planning and design with room for revision
-    - Analysis that might need course correction
-    - Problems where the full scope might not be clear initially
-    - Problems that require a multi-step solution
-    - Tasks that need to maintain context over multiple steps
-    - Situations where irrelevant information needs to be filtered out
-
-    Key features:
-    - You can adjust total_thoughts up or down as you progress
-    - You can question or revise previous thoughts
-    - You can add more thoughts even after reaching what seemed like the end
-    - You can express uncertainty and explore alternative approaches
-    - Not every thought needs to build linearly - you can branch or backtrack
-    - Generates a solution hypothesis
-    - Verifies the hypothesis based on the Chain of Thought steps
-    - Repeats the process until satisfied
-    - Provides a correct answer
+    - Breaking down complex problems into manageable components
+    - Planning multi-step solutions and approaches
+    - Analyzing code and understanding system architecture
+    - Researching solutions for technical challenges
+    - Creating comprehensive analysis of issues
+    - Planning debugging strategies and fixes
 
     Args:
-        thought: Current thinking step
-        thought_number: Current number in sequence
-        total_thoughts: Current estimate of thoughts needed
-        next_thought_needed: True if more thoughts are needed, even if at what seemed like the end
-        is_revision: True if this thought revises a previous thought
-        revises_thought: Number of the thought being revised (if is_revision is True)
-        branch_from_thought: Number of the thought this branches from (for alternative approaches)
-        branch_id: Unique identifier for this branch of thinking
+        problem_description: Detailed description of the problem or task to analyze
+        context: Additional context about the problem, project, or environment
+        max_thoughts: Maximum number of thinking steps to take (default: 15)
+        thinking_approach: Specific approach for thinking (optional)
+        working_directory: Base directory for file operations (optional)
     """
-    output_parts = [
-        f"THOUGHT [{thought_number}/{total_thoughts}]:",
-        f"{thought}",
-        f"Next thought needed: {next_thought_needed}",
-    ]
 
-    if is_revision:
-        output_parts.append(f"Revision of thought #{revises_thought}")
-    if branch_from_thought:
-        output_parts.append(f"Branching from thought #{branch_from_thought}")
-    if branch_id:
-        output_parts.append(f"Branch ID: {branch_id}")
+    try:
+        # Convert working directory string to Path if provided
+        working_path = None
+        if working_directory:
+            working_path = Path(working_directory)
 
-    return "\n".join(output_parts)
+        # Add thinking approach to context if provided
+        full_context = context or ""
+        if thinking_approach:
+            if full_context:
+                full_context += f"\n\nThinking approach: {thinking_approach}"
+            else:
+                full_context = f"Thinking approach: {thinking_approach}"
+
+        # Prepare initial message for the thinking agent
+        initial_message = problem_description
+        if full_context:
+            initial_message = f"{problem_description}\n\nContext:\n{full_context}"
+
+        # Run the thinking agent
+        thinking_result = run_thinking_agent(
+            initial_message=initial_message,
+            problem_context=full_context,
+            max_thoughts=max_thoughts,
+            working_directory=working_path,
+        )
+
+        return thinking_result
+
+    except Exception as e:
+        return f"Error in thinking subagent: {str(e)}"
+
+
+@tool
+def quick_analysis_tool(
+    problem: str,
+    max_thoughts: int = 8,
+    use_web_search: bool = False,
+    working_directory: Optional[str] = None,
+) -> str:
+    """Quick analysis tool for simpler problems or time-sensitive tasks.
+
+    Args:
+        problem: Brief description of the problem to analyze
+        max_thoughts: Maximum number of thinking steps (default: 8 for quick analysis)
+        use_web_search: Whether to enable web search for external information
+        working_directory: Base directory for file operations (optional)
+    """
+
+    # Set up quick analysis context
+    context = "Quick analysis mode - focus on concise, actionable insights."
+
+    try:
+        # Convert working directory string to Path if provided
+        working_path = None
+        if working_directory:
+            working_path = Path(working_directory)
+
+        # Run the thinking agent with quick analysis settings
+        thinking_result = run_thinking_agent(
+            initial_message=f"Quick analysis: {problem}",
+            problem_context=context,
+            max_thoughts=max_thoughts,
+            working_directory=working_path,
+        )
+
+        return thinking_result
+
+    except Exception as e:
+        return f"Error in quick analysis: {str(e)}"

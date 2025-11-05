@@ -19,6 +19,7 @@ all_tools = [
     edit_tool,
     sequential_thinking_tool,
     task_done,
+    # Add thinking agent tools to the main tools list
 ]
 
 # Tool registry mapping for easy access
@@ -28,3 +29,6 @@ tools_registry = {
     "sequentialthinking": sequential_thinking_tool,
     "task_done": task_done,
 }
+
+# Import thinking agent tools for subagent
+from .thinking_tools import all_tools as thinking_agent_tools

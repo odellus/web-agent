@@ -26,6 +26,9 @@ dependencies = [
     "matplotlib>=3.10.6",
     "websockets>=12.0",
     "jsonrpcserver>=5.0.9",
+    "pytest>=8.4.2",
+    "markdownify>=1.2.0",
+    "aiohttp>=3.12.15",
 ]
 
 # Use proper TOML table structure instead of inline tables
