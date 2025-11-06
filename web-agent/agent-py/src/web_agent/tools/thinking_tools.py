@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Any
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -11,6 +11,16 @@ import markdownify
 from langchain_core.tools import tool
 from pydantic import DirectoryPath
 from langgraph.prebuilt import InjectedState
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, SystemMessage
+
+llm = ChatOpenAI(
+    base_url="http://localhost:11434/v1",
+    api_key="ollama",
+    model="qwen3:latest",
+    temperature=0.1,
+)
+
 
 # Configure logging
 logging.basicConfig(
@@ -36,8 +46,8 @@ def thinking_tool(
     analysis_type: Optional[str] = None,
     confidence_level: Optional[int] = None,
     # Injected state from agent
-    messages: Optional[List] = None,
-    working_directory: Optional[DirectoryPath] = InjectedState("working_directory"),
+    messages: Optional[Any] = InjectedState("messages"),
+    working_directory: Optional[Any] = InjectedState("working_directory"),
 ) -> str:
     """Enhanced thinking tool for structured problem analysis and planning with LLM integration.
 
@@ -62,18 +72,42 @@ def thinking_tool(
     """
     logger.info(f"Thinking tool called - Thought {thought_number}/{total_thoughts}")
 
-    # Log context if available
-    if messages:
-        logger.info(f"Message history available: {len(messages)} messages")
+    # Log raw values to see what we're getting
+    logger.info(f"Raw messages type: {type(messages)}")
+    logger.info(f"Raw working_directory type: {type(working_directory)}")
 
-    if working_directory:
-        logger.info(f"Working directory: {working_directory}")
+    # Like bash_tool, just use the injected values directly
+    actual_messages = messages
+    actual_working_directory = working_directory
 
     # Use LLM for complex thinking scenarios
     if (
         analysis_type in ["complex_analysis", "strategic_planning"]
         or confidence_level is None
     ):
+        # Debug: print what we're getting
+        print(f"DEBUG: messages = {messages} (type: {type(messages)})")
+        print(
+            f"DEBUG: working_directory = {working_directory} (type: {type(working_directory)})"
+        )
+        if hasattr(messages, "__dict__"):
+            print(f"DEBUG: messages.__dict__ = {messages.__dict__}")
+        if hasattr(working_directory, "__dict__"):
+            print(f"DEBUG: working_directory.__dict__ = {working_directory.__dict__}")
+
+        # Handle InjectedState by extracting the field value
+        if hasattr(messages, "field") and messages.field == "messages":
+            print(f"DEBUG: messages.value = {getattr(messages, 'value', 'NO VALUE')}")
+            messages = getattr(messages, "value", None)
+        if (
+            hasattr(working_directory, "field")
+            and working_directory.field == "working_directory"
+        ):
+            print(
+                f"DEBUG: working_directory.value = {getattr(working_directory, 'value', 'NO VALUE')}"
+            )
+            working_directory = getattr(working_directory, "value", None)
+
         return _llm_thinking_analysis(
             thought=thought,
             thought_number=thought_number,
@@ -121,20 +155,38 @@ def _llm_thinking_analysis(
     problem_context: Optional[str],
     solution_hypothesis: Optional[str],
     analysis_type: Optional[str],
-    messages: Optional[List],
-    working_directory: Optional[DirectoryPath],
+    messages: Optional[Any],
+    working_directory: Optional[Any],
 ) -> str:
-    """Use LLM for complex thinking analysis."""
+    """Use LLM for complex thinking analysis with proper error handling."""
 
-    from langchain_openai import ChatOpenAI
-    from langchain_core.messages import HumanMessage, SystemMessage
+    # Write raw inputs to log file for debugging
+    with open("thinking_analysis_debug.log", "a") as f:
+        f.write(f"=== LLM Analysis Debug ===\n")
+        f.write(f"Thought: {thought}\n")
+        f.write(f"Messages type: {type(messages)}\n")
+        f.write(f"Working directory type: {type(working_directory)}\n")
+        if messages:
+            f.write(f"Messages: {messages}\n")
+        if working_directory:
+            f.write(f"Working directory: {working_directory}\n")
+        f.write("========================\n\n")
 
-    llm = ChatOpenAI(
-        base_url="http://localhost:11434/v1",
-        api_key="ollama",
-        model="qwen3:latest",
-        temperature=0.1,
-    )
+    # Check if we have actual data or just empty InjectedState
+    if not messages or messages is None:
+        # No messages available - just return basic thinking without LLM
+        result = f"""BASIC THINKING [{thought_number}/{total_thoughts}]:
+{thought}
+
+Next thought needed: {next_thought_needed}
+Context: {problem_context or "None"}
+Analysis type: {analysis_type or "None"}
+Confidence: {confidence_level or "Unknown"}
+
+---
+Note: No conversation history available for LLM enhancement
+"""
+        return result
 
     # Build thinking prompt
     prompt_parts = [
@@ -149,38 +201,35 @@ def _llm_thinking_analysis(
     if analysis_type:
         prompt_parts.append(f"Analysis type: {analysis_type}")
 
-    if messages:
-        # Add recent conversation context
-        recent_messages = messages[-3:]  # Last 3 messages
-        prompt_parts.append("Recent conversation context:")
-        for msg in recent_messages:
+    # Add ALL messages without truncation
+    prompt_parts.append("Full conversation context:")
+    if hasattr(messages, "__iter__") and not isinstance(messages, str):
+        for i, msg in enumerate(messages):
             if hasattr(msg, "content"):
-                prompt_parts.append(f"  - {msg.content[:100]}...")
+                prompt_parts.append(f"  Message {i}: {msg.content}")
+            else:
+                prompt_parts.append(f"  Message {i}: {str(msg)}")
+    else:
+        prompt_parts.append(f"  Messages: {str(messages)}")
 
     thinking_prompt = "\n".join(prompt_parts)
 
     logger.info("Using LLM for complex thinking analysis")
+    thinking_message = HumanMessage(
+        content=f"""Enhance this thinking step with deeper analysis:
 
+    {thinking_prompt}
+
+    Please:
+    1. Provide additional insights and perspectives
+    2. Suggest next steps or alternative approaches
+    3. Identify potential issues or blind spots
+    4. Maintain the structured thinking format
+    """
+    )
+    msgs = messages.append(thinking_message)
     try:
-        response = llm.invoke(
-            [
-                SystemMessage(
-                    content="You are an expert reasoning AI. Provide insightful analysis and improvements to the thinking process."
-                ),
-                HumanMessage(
-                    content=f"""Enhance this thinking step with deeper analysis:
-
-{thinking_prompt}
-
-Please:
-1. Provide additional insights and perspectives
-2. Suggest next steps or alternative approaches
-3. Identify potential issues or blind spots
-4. Maintain the structured thinking format
-"""
-                ),
-            ]
-        )
+        response = llm.invoke(msgs)
 
         result = f"""LLM-ENHANCED THINKING [{thought_number}/{total_thoughts}]:
 {response.content}
@@ -194,19 +243,19 @@ Original thought: {thought}
 
     except Exception as e:
         logger.error(f"LLM thinking analysis failed: {e}")
-        # Fallback to standard thinking
-        return thinking_tool(
-            thought=thought,
-            thought_number=thought_number,
-            total_thoughts=total_thoughts,
-            next_thought_needed=next_thought_needed,
-            problem_context=problem_context,
-            solution_hypothesis=solution_hypothesis,
-            analysis_type=analysis_type,
-            confidence_level=5,  # Default confidence
-            messages=messages,
-            working_directory=working_directory,
-        )
+        # Fallback to standard thinking without InjectedState
+        fallback_result = f"""STANDARD THINKING [{thought_number}/{total_thoughts}]:
+{thought}
+
+Next thought needed: {next_thought_needed}
+Context: {problem_context or "None"}
+Analysis type: {analysis_type or "None"}
+Confidence: 5/10 (Fallback due to LLM error)
+
+---
+LLM analysis failed: {str(e)}
+"""
+        return fallback_result
 
 
 @tool

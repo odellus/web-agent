@@ -201,7 +201,6 @@ async def run_thinking_agent(
     problem_context: Optional[str] = None,
     max_thoughts: int = 15,
     working_directory: Optional[DirectoryPath] = None,
-    checkpointer=None,
 ) -> str:
     """Run the thinking agent with initial message and return the final response"""
     logger.info(f"Starting thinking agent session - max thoughts: {max_thoughts}")
@@ -218,12 +217,16 @@ async def run_thinking_agent(
         thoughts_completed=False,
     )
 
-    # Get agent
-    agent = get_thinking_agent(checkpointer)
+    # Use MemorySaver for checkpointer
+    from langgraph.checkpoint.memory import MemorySaver
 
-    # Run agent
+    memory = MemorySaver()
+    agent = get_thinking_agent(checkpointer=memory)
+
+    # Run agent with proper config for checkpointer
+    config = {"configurable": {"thread_id": "test-thread-123"}}
     step_count = 0
-    async for event in agent.astream(initial_state):
+    async for event in agent.astream(initial_state, config=config):
         step_count += 1
         logger.info(f"Step {step_count}")
 
@@ -239,9 +242,13 @@ async def run_thinking_agent(
                         )
 
     # Return final response
-    final_state = agent.get_state(agent.config)
-    if final_state.messages:
-        final_content = final_state.messages[-1].content
+    final_state = agent.get_state(config)
+    if (
+        final_state
+        and hasattr(final_state, "values")
+        and final_state.values.get("messages")
+    ):
+        final_content = final_state.values["messages"][-1].content
         logger.info(f"Session completed - final response length: {len(final_content)}")
         return final_content
     else:

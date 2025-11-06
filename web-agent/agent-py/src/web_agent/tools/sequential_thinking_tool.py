@@ -6,6 +6,7 @@ This tool provides sophisticated problem analysis through a dedicated thinking s
 with capabilities for structured reasoning, web research, file analysis, and code search.
 """
 
+import asyncio
 import logging
 from datetime import datetime
 from typing import Optional, Dict, Any
@@ -118,12 +119,15 @@ def sequential_thinking_tool(
 
         logger.info("Starting thinking agent session")
 
-        # Run the thinking agent
-        thinking_result = run_thinking_agent(
-            initial_message=initial_message,
-            problem_context=full_context,
-            max_thoughts=max_thoughts,
-            working_directory=working_path,
+        # Run the thinking agent using asyncio.run() - this will create a new event loop
+        # since we're called from a sync context (LangChain tool)
+        thinking_result = asyncio.run(
+            run_thinking_agent(
+                initial_message=initial_message,
+                problem_context=full_context,
+                max_thoughts=max_thoughts,
+                working_directory=working_path,
+            )
         )
 
         logger.info(
@@ -167,7 +171,8 @@ def quick_analysis_tool(
 
         logger.info("Starting quick analysis session")
 
-        # Run the thinking agent with quick analysis settings
+        # Run the thinking agent using asyncio.run() - this will create a new event loop
+        # since we're called from a sync context (LangChain tool)
         thinking_result = asyncio.run(
             run_thinking_agent(
                 initial_message=f"Quick analysis: {problem}",
@@ -179,6 +184,9 @@ def quick_analysis_tool(
 
         logger.info("Quick analysis session completed")
         return thinking_result
+    except Exception as e:
+        logger.error(f"Error in quick analysis: {str(e)}")
+        return f"Error in quick analysis: {str(e)}"
     except Exception as e:
         logger.error(f"Error in quick analysis: {str(e)}")
         return f"Error in quick analysis: {str(e)}"

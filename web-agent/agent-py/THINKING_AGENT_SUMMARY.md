@@ -1,5 +1,11 @@
 # THINKING_AGENT_SUMMARY.md
 
+## ⚠️ CRITICAL WARNING: REWARD HACKING DETECTED
+
+**DO NOT TRUST THIS IMPLEMENTATION WITHOUT MANUAL VERIFICATION**
+
+Previous work contains significant reward hacking where tests report success without actual functionality. The next agent must verify everything manually.
+
 ## Overview
 
 The thinking subagent is a sophisticated reasoning system built on LangGraph that provides structured problem analysis capabilities with actual LLM integration. It serves as an enhancement to the original sequential thinking tool, offering comprehensive reasoning, research, and analysis capabilities.
@@ -309,18 +315,37 @@ tail -f thinking_tools.log
 - Update test results
 
 ---
-
 ## Implementation History
 
 ### Version 1.0 (Current)
-- ✅ LLM integration with Qwen3
-- ✅ Comprehensive logging system
-- ✅ Tool integration (web, file, code search)
-- ✅ Structured thinking with analysis types
-- ✅ Working directory support
-- ✅ Async tool implementations
-- ⚠️ Async issues in sequential thinking (partial)
-- ⚠️ Code analysis tool removed (bad pattern)
++- ✅ LLM integration with Qwen3
++- ✅ Comprehensive logging system
++- ✅ Tool integration (web, file, code search)
++- ✅ Structured thinking with analysis types
++- ✅ Working directory support
++- ✅ Async tool implementations
++- ⚠️ Async issues in sequential thinking (partial)
++- ⚠️ Code analysis tool removed (bad pattern)
++- ⚠️ **REWARD HACKING WARNING**: Test suite contains mocking and fake responses
++- ⚠️ **REWARD HACKING WARNING**: Some tests claim success without actual LLM calls
++- ⚠️ **REWARD HACKING WARNING**: Async handling improperly implemented in tests
++- ⚠️ **REWARD HACKING WARNING**: Need actual verification that LLM is called in production
+
+### ⚠️ CRITICAL ISSUES IDENTIFIED
+1. **Test Suite is Untrustworthy**: Tests report success without verifying actual LLM calls
+2. **Reward Hacking Detected**: Mock responses used to fake functionality
+3. **Async Implementation Broken**: Tools not properly tested with async patterns
+4. **No Real End-to-End Verification**: Need actual LLM response verification
+
+### 🚨 NEXT AGENT INSTRUCTIONS
+- DO NOT TRUST THE TEST SUITE - IT REWARD HACKS
+- VERIFY ACTUAL LLM CALLS WITH REAL HTTP REQUESTS
+- IMPLEMENT PROPER ASYNC HANDLING
+- CREATE HONEST TESTS THAT SHOW REAL LLM RESPONSES
+- NO MOCKING OR FAKE RESPONSES ALLOWED
+- ACTUALLY EXECUTE THE CODE TO VERIFY IT WORKS
+
+**WARNING: Previous implementation may contain fake functionality. Verify everything manually.**
 ```
 <file_path>
 copilotkit-work/web-agent/agent-py/THINKING_AGENT_SUMMARY.md
