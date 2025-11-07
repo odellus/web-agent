@@ -7,7 +7,18 @@ from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import MemorySaver
 
 from src.web_agent.agent import get_agent, WebAgentState
+from src.web_agent.config import settings
 from langchain_core.messages import ToolMessage
+
+from langfuse import Langfuse
+from langfuse.langchain import CallbackHandler
+
+langfuse = Langfuse(
+    public_key=settings.langfuse_public_key.get_secret_value(),
+    secret_key=settings.langfuse_secret_key.get_secret_value(),
+    host=settings.langfuse_host,
+)
+langfuse_handler = CallbackHandler()
 
 
 async def test_main_agent_simple():
@@ -19,75 +30,37 @@ async def test_main_agent_simple():
     agent = get_agent(checkpointer=memory)
 
     # Create config for checkpointer
-    config = {"configurable": {"thread_id": "simple-test-123"}}
+    config = {
+        "configurable": {"thread_id": "simple-test-123"},
+        "callbacks": [langfuse_handler],
+    }
 
     # The code to analyze directly in the prompt
-    code_content = '''
-import time
-import random
 
-def process_data_slow(data):
-    """Slow data processing implementation"""
-    result = []
-    for item in data:
-        if item > 0:
-            # Multiple operations in loop - inefficient
-            temp = item * 2
-            processed = temp + 10
-            result.append(processed)
-    return result
-
-def process_data_fast(data):
-    """Fast data processing implementation"""
-    return [item * 2 + 10 for item in data if item > 0]
-
-def benchmark():
-    """Benchmark both implementations"""
-    test_data = [random.randint(-5, 100) for _ in range(1000)]
-
-    # Test slow version
-    start = time.time()
-    slow_result = process_data_slow(test_data)
-    slow_time = time.time() - start
-
-    # Test fast version
-    start = time.time()
-    fast_result = process_data_fast(test_data)
-    fast_time = time.time() - start
-
-    print(f"Slow version: {slow_time:.4f}s")
-    print(f"Fast version: {fast_time:.4f}s")
-    print(f"Speed improvement: {slow_time/fast_time:.2f}x")
-
-    return slow_result, fast_result
-
-if __name__ == "__main__":
-    benchmark()
-'''
-
-    # Create the initial state with a coding task and direct code content
+    # Create the initial state with working directory and project analysis task
     initial_state = WebAgentState(
         messages=[
             HumanMessage(
                 content=f"""
-Analyze and optimize this Python code:
-
-```python
-{code_content}
-```
+Understand the project structure in the working directory and write a comprehensive summary.
 
 Your task:
-1. Use the sequential thinking tool to deeply analyze the performance implications
-2. Identify specific optimization opportunities
-3. Suggest improvements with detailed reasoning
-4. Consider edge cases and maintainability
-5. Provide specific code recommendations
+1. Use the sequential thinking tool to plan your analysis approach
+2. Explore the project structure systematically
+3. Identify key components and their purposes
+4. Analyze the architecture and organization
+5. Provide a detailed summary of what this project does and how it's structured
+
+Working directory: /home/thomas/src/projects/copilotkit-work/test_workingdir
 
 Start by using the sequential thinking tool to plan your analysis approach.
+
+Finish by writing a summary of your findings in SUMMARY.md please.
                 """
             )
         ],
         remaining_steps=20,  # Give it enough steps
+        working_directory="/home/thomas/src/projects/copilotkit-work/test_workingdir",
     )
 
     print("Starting agent with coding task...")

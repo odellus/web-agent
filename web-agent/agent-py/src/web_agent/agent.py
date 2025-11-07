@@ -28,9 +28,9 @@ from langfuse import Langfuse
 from langfuse.langchain import CallbackHandler
 
 llm = ChatOpenAI(
-    base_url="http://localhost:11434/v1",
-    api_key="ollama",
-    model="qwen3:latest",
+    base_url="http://192.168.1.175:1234/v1",
+    api_key="lm-studio",
+    model="glm-4.5-air@q4_k_m",
     temperature=0.1,
 )
 
